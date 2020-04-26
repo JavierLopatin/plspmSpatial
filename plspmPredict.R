@@ -1,5 +1,5 @@
 ##########################################################################################
-# plspmPred.R
+# plspmPredict.R
 # Description: This function predicts PLS-PM latent and measurement variables from
 #              a 'plspm' object ('plspm' R-package)
 # This is based on the publication:
@@ -7,41 +7,51 @@
 #   Evaluating the Predictive Performance of Partial Least Squares (PLS) Path Models (2015).
 #   SSRN Electronic Journal SSRN Journal.
 #
-#  And was addapted from the script:
+#  The scriptis based on the following code:
 #   https://github.com/ISS-Analytics/pls-predict/blob/master/lib/PLSpredict.R
-#   in order to work directly with an plspm object.
+#   in order to work directly with an plspm object and to allow for raster data predicitons
+#
+# data input:
+# -----------
+#   - pls: An plspm object from the plspm package
+#   - dat: dataframe or Raster Stack with the model predictors
 #
 # @author: Javier Lopatin
 #
 ##########################################################################################
 
-plspmPredict <- function(pls, testData){
-
+plspmPredict <- function(pls, dat, ...)
+{
     if (class(pls) != "plspm")
       stop("\n'plspmPredict()' requires a 'plspm' object")
-    # test availibility of dataset (either Y or pls$data)
-    plspm::test_dataset(Y, pls$data, pls$model$gens$obs)
+    if (all(class(dat) != "data.frame" && class(dat) != "RasterStack" && class(dat) != "RasterBrick"))
+        stop("\n'plspmPredict()' requires a 'data.frame', 'RasterStack', or 'RasterBrick' object")
+    # Determine method
+    if (class (dat) ==  "data.frame") method <- 'dat'
+    if (class (dat) == 'RasterBrick') method <- 'rst'
+    if (class (dat) == 'RasterStack') method <- 'rst'
+
 
     # =======================================================
     # inputs setting
     # =======================================================
 
-    ltVariables = pls$model$gen$lvs_names
-    mmVariables = pls$model$gen$mvs_names
-    path_coef <- pls$path_coefs
-
-    #Extract and Normalize the measurements for the model
-    normDataTrain <- scale(pls$data[, mmVariables],TRUE,TRUE)
-
-    #Extract Mean and Standard Deviation of measurements for future prediction
+    # from plspm object
+    ltVariables <- pls$model$gen$lvs_names # latent variables
+    mmVariables <- pls$model$gen$mvs_names # measurement variables
+    path_coef   <- pls$path_coefs # path coefficients
+    Scores      <- pls$scores
+    # Extract and Normalize the measurements for the model
+    normDataTrain <- scale(pls$data[, mmVariables], TRUE, TRUE)
+    # Extract Mean and Standard Deviation of measurements for future prediction
     meanData <- attr(normDataTrain, "scaled:center")
-    sdData <- attr(normDataTrain, "scaled:scale")
+    sdData   <- attr(normDataTrain, "scaled:scale")
 
     # =======================================================
     # prepare data
     # =======================================================
 
-    #Create a matrix of outer_weights
+    # Create a matrix of outer_weights
     outer_weights <- matrix(data=0,
                             nrow=length(mmVariables),
                             ncol=length(ltVariables),
@@ -73,7 +83,7 @@ plspmPredict <- function(pls, testData){
       smMatrix[i,2] <- gsub(" ", "", enVar, fixed = TRUE)
     }
 
-    #Create a matrix of outer_loadins
+    # Create a matrix of outer_loadins
     outer_loadings <- matrix(data=0,
                             nrow=length(mmVariables),
                             ncol=length(ltVariables),
@@ -86,17 +96,19 @@ plspmPredict <- function(pls, testData){
     }
 
 
-    #Identify Exogenous and Endogenous Variables
+    # Identify Exogenous and Endogenous Variables
     exVariables <- unique(smMatrix[,1])
     pMeasurements <- NULL
     for (i in 1:length(exVariables)){
       pMeasurements <- c(pMeasurements,mmMatrix[mmMatrix[,"latent"]==exVariables[i],"measurement"])
     }
+
     enVariables <- unique(smMatrix[,2])
     resMeasurements <- NULL
     for (i in 1:length(enVariables)){
       resMeasurements <- c(resMeasurements, mmMatrix[mmMatrix[, "latent"] == enVariables[i],"measurement"])
     }
+
     enVariables <- setdiff(enVariables,exVariables)
     eMeasurements <- NULL
     for (i in 1:length(enVariables)){
@@ -107,8 +119,10 @@ plspmPredict <- function(pls, testData){
     # predict PLS-PM values
     # =======================================================
 
-    #Extract Measurements needed for Predictions
-    normData <- testData[, pMeasurements]
+
+    # Extract Measurements needed for Predictions
+    if (method == 'dat')
+        normData <- dat[, pMeasurements]
 
     # Normalize data
     for (i in pMeasurements)
@@ -117,7 +131,7 @@ plspmPredict <- function(pls, testData){
     }
 
     # Convert dataset to matrix
-    normData<-data.matrix(normData)
+    normData <- data.matrix(normData)
 
     # Add empty columns to normData for the estimated measurements
     for (i in 1:length(eMeasurements))
@@ -141,14 +155,18 @@ plspmPredict <- function(pls, testData){
       predictedMeasurements[,i]<-(predictedMeasurements[,i] * sdData[i])+meanData[i]
     }
 
-    #Calculating the residuals
-    residuals <- testData[,resMeasurements] - predictedMeasurements[,resMeasurements]
+    # Calculating the measurement residuals
+    mmResiduals <- dat[,resMeasurements] - predictedMeasurements[,resMeasurements]
 
-    #Prepare return Object
-    predictResults <- list(testData = testData[,resMeasurements],
+    # Calculating the LV residuals
+    lvResiduals <-  Scores - fscores
+
+    # Prepare return Object
+    predictResults <- list(dat = dat[,resMeasurements],
                            predictedMeasurements = predictedMeasurements[,resMeasurements],
-                           residuals = residuals,
-                           compositeScores = fscores)
+                           mmResiduals = mmResiduals,
+                           lvScores = fscores,
+                           lvResiduals = lvResiduals)
 
     class(predictResults) <- "predictResults"
     return(predictResults)
