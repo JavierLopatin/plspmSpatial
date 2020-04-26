@@ -51,18 +51,18 @@ plspmPredict <- function(pls, dat)
   # prepare data
   # =======================================================
 
-  # Create a matrix of outer_weights
-  outer_weights <- matrix(data=0,
-                          nrow=length(mmVariables),
-                          ncol=length(ltVariables),
-                          dimnames = list(mmVariables,ltVariables))
-
   # get relationship matrix
   mmMatrix = matrix(nrow = length(mmVariables),
                     ncol = 2, byrow =TRUE,
                     dimnames = list(1:length(mmVariables), c("latent","measurement")))
   mmMatrix[,'latent'] = as.character(pls$outer_model[,2])
   mmMatrix[,'measurement'] = as.character(pls$outer_model[,1])
+
+  # Create a matrix of outer_weights
+  outer_weights <- matrix(data=0,
+                          nrow=length(mmVariables),
+                          ncol=length(ltVariables),
+                          dimnames = list(mmVariables,ltVariables))
 
   #Initialize outer_weights matrix with value 1 for each relationship in the measurement model
   for (i in 1:length(ltVariables))  {
