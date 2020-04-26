@@ -162,13 +162,12 @@ plspmPredict <- function(pls, dat, ...)
     lvResiduals <-  Scores - fscores
 
     # Prepare return Object
-    predictResults <- list(dat = dat[,resMeasurements],
-                           predictedMeasurements = predictedMeasurements[,resMeasurements],
+    predictResults <- list(mmPredicted = predictedMeasurements[,resMeasurements],
                            mmResiduals = mmResiduals,
                            lvScores = fscores,
                            lvResiduals = lvResiduals)
 
-    class(predictResults) <- "predictResults"
+    class(predictResults) <- "plspmPredict"
     return(predictResults)
 
 }
