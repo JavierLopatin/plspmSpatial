@@ -11,7 +11,7 @@ The script was adapted from the script:
 
 The adaptation was done in order to work directly with an plspm object.
 
-WARNING: For the moment, only working with <code>class(data) == data.frame</code> object for prediction. Raster classes and accuracy metrics to be added
+WARNING: For the moment, only working with <code>class(data) == data.frame</code> object for prediction. Raster classes to be added
 
 ------------------------
 
@@ -31,13 +31,23 @@ The function plspmPredict estimates  extrapolation values
 Values:
 ------
 An object of class <code>plspmPredict</code> is returned. The object returns a list with:
+  - **mmData**
+        Matrix or RasterStack of the input measurement variables
   - **mmPredicted**
-        data.frame or RasterStack of the predicted all measurement variables
+        Matrix or RasterStack of the predicted all measurement variables
   - **mmResiduals**
-        data.frame or RasterStack of the residuals of all measurement variables
+        Matrix or RasterStack of the residuals of all measurement variables
   - **lvPredict**
-        data.frame or RasterStack of the predicted Latent Variables scores [in ordination units]
+        Matrix or RasterStack of the predicted Latent Variables scores [in ordination units]
   - **lvResiduals**
-        data.frame or RasterStack of the residuals of all Latent Variables scores
+        Matrix or RasterStack of the residuals of all Latent Variables scores
+  - **r_square**
+        Matrix of Squared Pearson's Correlation values of all measurement variables
+  - **RMSE**
+        Matrix of Root-Mean-Square-Error values of all measurement variables
+  - **nRMSE**
+        Matrix of normalizedRoot-Mean-Square-Error [%] values of all measurement variables
+  - **nRMSE**
+        Matrix of bias values of all measurement variables
 
 @author: Javier Lopatin
