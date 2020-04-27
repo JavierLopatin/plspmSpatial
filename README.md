@@ -1,6 +1,6 @@
-# plspmTools
+# plspmSpatial
 
-Set of functions to help in PLS-PM analysis of ecological and geoscience data.
+Set of functions to help in PLS-PM analysis in spatial ecological applications
 
 The currently included functions are:
 
@@ -54,27 +54,27 @@ An object of class <code>plspmPredict</code> is returned. The object returns a l
 
 -   **mmResiduals**
 
-        Matrix or RasterStack of the residuals of all measurement variables
+        Matrix of the residuals of all measurement variables. Only if validation data of the target endogenous variables are provided for validation
 
 -   **Scores**
 
-        Matrix or RasterStack of the predicted Latent Variables scores [in ordination units]
+        Matrix of the predicted Latent Variables scores [in ordination units]. Only if validation data of the target endogenous variables are provided for validation
 
 -   **r_square**
 
-        Matrix of Squared Pearson's Correlation values of all measurement variables (only with 'dat' as class 'data.frame')
+        Matrix of Squared Pearson's Correlation values of all measurement variables. Only if validation data of the target endogenous variables are provided for validation
 
 -   **RMSE**
 
-        Matrix of Root-Mean-Square-Error values of all measurement variables (only with 'dat' as class 'data.frame')
+        Matrix of Root-Mean-Square-Error values of all measurement variables Only if validation data of the target endogenous variables are provided for validation
 
 -   **nRMSE**
 
-        Matrix of normalizedRoot-Mean-Square-Error [%] values of all measurement variables (only with 'dat' as class 'data.frame')
+        Matrix of normalizedRoot-Mean-Square-Error [%] values of all measurement variables. Only if validation data of the target endogenous variables are provided for validation
 
 -   **bias**
 
-        Matrix of bias values of all measurement variables (only with 'dat' as class 'data.frame')
+        Matrix of bias values of all measurement variables. Only if validation data of the target endogenous variables are provided for validation
 
 ### **plspm.groupsPredict**:
 

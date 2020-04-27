@@ -151,40 +151,54 @@ plspmPredict <- function(pls, dat)
     predictedMeasurements[,i]<-(predictedMeasurements[,i] * sdData[i]) + meanData[i]
   }
 
-  # Calculating the measurement residuals
-  mmResiduals <- dat[,resMeasurements] - predictedMeasurements[,resMeasurements]
+  # Calculating the measurement residuals and accuracies if validation data is provided
+  if (!is.na(sum( match( eMeasurements, colnames(dat) ) ))){
 
-  # get r-sqaure values
-  r_square <- matrix(ncol = length(resMeasurements), nrow = 1, byrow = T)
-  colnames(r_square) <- resMeasurements
-  for (i in 1:length(resMeasurements)){
-    r_square[,i] <- cor(dat[,resMeasurements[i]], predictedMeasurements[,resMeasurements[i]], method="pearson")
-  }
+      # measurement variables data
+      mmData = dat[, eMeasurements]
 
-  # get RMSE values
-  RMSE <- matrix(ncol = length(resMeasurements), nrow = 1, byrow = T)
-  colnames(RMSE) <- resMeasurements
-  for (i in 1:length(resMeasurements)){
-    RMSE[,i] <- sqrt(mean((dat[,resMeasurements[i]] - predictedMeasurements[,resMeasurements[i]])^2))
-  }
+      # get residuals
+      mmResiduals <- dat[,resMeasurements] - predictedMeasurements[,resMeasurements]
 
-  # get normalize-RMSE values
-  nRMSE <- matrix(ncol = length(resMeasurements), nrow = 1, byrow = T)
-  colnames(nRMSE) <- resMeasurements
-  for (i in 1:length(resMeasurements)){
-    nRMSE[,i] <- (RMSE[,i]/( max(dat[,resMeasurements[i]]) - min(dat[,resMeasurements[i]]) ))*100
-  }
+      # get r-sqaure values
+      r_square <- matrix(ncol = length(resMeasurements), nrow = 1, byrow = T)
+      colnames(r_square) <- resMeasurements
+      for (i in 1:length(resMeasurements)){
+        r_square[,i] <- cor(dat[,resMeasurements[i]], predictedMeasurements[,resMeasurements[i]], method="pearson")
+      }
 
-  # get bias values
-  bias <- matrix(ncol = length(resMeasurements), nrow = 1, byrow = T)
-  colnames(bias) <- resMeasurements
-  for (i in 1:length(resMeasurements)){
-    lm = lm(predictedMeasurements[,resMeasurements[i]] ~ dat[,resMeasurements[i]]-1)
-    bias[,i] <- 1-coef(lm)
+      # get RMSE values
+      RMSE <- matrix(ncol = length(resMeasurements), nrow = 1, byrow = T)
+      colnames(RMSE) <- resMeasurements
+      for (i in 1:length(resMeasurements)){
+        RMSE[,i] <- sqrt(mean((dat[,resMeasurements[i]] - predictedMeasurements[,resMeasurements[i]])^2))
+      }
+
+      # get normalize-RMSE values
+      nRMSE <- matrix(ncol = length(resMeasurements), nrow = 1, byrow = T)
+      colnames(nRMSE) <- resMeasurements
+      for (i in 1:length(resMeasurements)){
+        nRMSE[,i] <- (RMSE[,i]/( max(dat[,resMeasurements[i]]) - min(dat[,resMeasurements[i]]) ))*100
+      }
+
+      # get bias values
+      bias <- matrix(ncol = length(resMeasurements), nrow = 1, byrow = T)
+      colnames(bias) <- resMeasurements
+      for (i in 1:length(resMeasurements)){
+        lm = lm(predictedMeasurements[,resMeasurements[i]] ~ dat[,resMeasurements[i]]-1)
+        bias[,i] <- 1-coef(lm)
+      }
+  } else {
+    mmData = dat[,pMeasurements]
+    residuals = NA
+    r_square = NA
+    RMSE = NA
+    nRMSE = NA
+    bias = NA
   }
 
   # Prepare return Object
-  predictResults <- list(mmData = dat[,resMeasurements],
+  predictResults <- list(mmData = mmData,
                          mmPredicted = predictedMeasurements[,resMeasurements],
                          mmResiduals = mmResiduals,
                          Scores = fscores,

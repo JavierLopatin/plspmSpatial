@@ -233,57 +233,71 @@ plspm.groupsPredict <- function(pls, pls.groups, train.groups, dat){
                       group1=predic_group1,
                       group2=predic_group2)
 
-  # Calculating the measurement residuals
-  mmResiduals_global <- dat[,resMeasurements] - predic_global[,resMeasurements]
-  mmResiduals_group1 <- dat[, resMeasurements] - predic_group1[,resMeasurements]
-  mmResiduals_group2 <- dat[, resMeasurements] - predic_group2[,resMeasurements]
+  # Calculating the measurement residuals and accuracies if validation data is provided
+  if (!is.na(sum( match( eMeasurements, colnames(dat) ) ))){
 
-  # make a list with residuals
-  residuals <- list(globa=mmResiduals_global,
-                    group1=mmResiduals_group1,
-                    group2=mmResiduals_group2)
+      # measurement variables data
+      mmData = dat[, eMeasurements]
 
-  # get r-sqaure values
-  r_square <- matrix(ncol = length(resMeasurements), nrow = 3, byrow = T)
-  colnames(r_square) <- resMeasurements
-  rownames(r_square) <- c('global','group1','group2')
-  for (i in 1:length(resMeasurements)){
-    r_square[1,i] <- cor(dat[,resMeasurements[i]], predic_global[,resMeasurements[i]], method="pearson")
-    r_square[2,i] <- cor(dat[,resMeasurements[i]], predic_group1[,resMeasurements[i]], method="pearson")
-    r_square[3,i] <- cor(dat[,resMeasurements[i]], predic_group2[,resMeasurements[i]], method="pearson")
-  }
+      # get residuals
+      mmResiduals_global <- dat[,resMeasurements] - predic_global[,resMeasurements]
+      mmResiduals_group1 <- dat[, resMeasurements] - predic_group1[,resMeasurements]
+      mmResiduals_group2 <- dat[, resMeasurements] - predic_group2[,resMeasurements]
 
-  # get RMSE values
-  RMSE <- matrix(ncol = length(resMeasurements), nrow = 3, byrow = T)
-  colnames(RMSE) <- resMeasurements
-  rownames(RMSE) <- c('global','group1','group2')
-  for (i in 1:length(resMeasurements)){
-    RMSE[1,i] <- sqrt(mean((dat[,resMeasurements[i]] - predic_global[,resMeasurements[i]])^2))
-    RMSE[2,i] <- sqrt(mean((dat[,resMeasurements[i]] - predic_group1[,resMeasurements[i]])^2))
-    RMSE[3,i] <- sqrt(mean((dat[,resMeasurements[i]] - predic_group2[,resMeasurements[i]])^2))
-  }
+      # make a list with residuals
+      residuals <- list(globa=mmResiduals_global,
+                        group1=mmResiduals_group1,
+                        group2=mmResiduals_group2)
 
-  # get normalize-RMSE values
-  nRMSE <- matrix(ncol = length(resMeasurements), nrow = 3, byrow = T)
-  colnames(nRMSE) <- resMeasurements
-  rownames(nRMSE) <- c('global','group1','group2')
-  for (i in 1:length(resMeasurements)){
-    nRMSE[1,i] <- (RMSE[1,i]/( max(dat[,resMeasurements[i]]) - min(dat[,resMeasurements[i]]) ))*100
-    nRMSE[2,i] <- (RMSE[2,i]/( max(dat[,resMeasurements[i]]) - min(dat[,resMeasurements[i]]) ))*100
-    nRMSE[3,i] <- (RMSE[3,i]/( max(dat[,resMeasurements[i]]) - min(dat[,resMeasurements[i]]) ))*100
-  }
+      # get r-sqaure values
+      r_square <- matrix(ncol = length(resMeasurements), nrow = 3, byrow = T)
+      colnames(r_square) <- resMeasurements
+      rownames(r_square) <- c('global','group1','group2')
+      for (i in 1:length(resMeasurements)){
+        r_square[1,i] <- cor(dat[,resMeasurements[i]], predic_global[,resMeasurements[i]], method="pearson")
+        r_square[2,i] <- cor(dat[,resMeasurements[i]], predic_group1[,resMeasurements[i]], method="pearson")
+        r_square[3,i] <- cor(dat[,resMeasurements[i]], predic_group2[,resMeasurements[i]], method="pearson")
+      }
 
-  # get bias values
-  bias <- matrix(ncol = length(resMeasurements), nrow = 3, byrow = T)
-  colnames(bias) <- resMeasurements
-  rownames(bias) <- c('global','group1','group2')
-  for (i in 1:length(resMeasurements)){
-    lm1 = lm(predic_global[,resMeasurements[i]] ~ dat[,resMeasurements[i]]-1)
-    lm2 = lm(predic_group1[,resMeasurements[i]] ~ dat[,resMeasurements[i]]-1)
-    lm3 = lm(predic_group2[,resMeasurements[i]] ~ dat[,resMeasurements[i]]-1)
-    bias[1,i] <- 1-coef(lm1)
-    bias[2,i] <- 1-coef(lm2)
-    bias[3,i] <- 1-coef(lm3)
+      # get RMSE values
+      RMSE <- matrix(ncol = length(resMeasurements), nrow = 3, byrow = T)
+      colnames(RMSE) <- resMeasurements
+      rownames(RMSE) <- c('global','group1','group2')
+      for (i in 1:length(resMeasurements)){
+        RMSE[1,i] <- sqrt(mean((dat[,resMeasurements[i]] - predic_global[,resMeasurements[i]])^2))
+        RMSE[2,i] <- sqrt(mean((dat[,resMeasurements[i]] - predic_group1[,resMeasurements[i]])^2))
+        RMSE[3,i] <- sqrt(mean((dat[,resMeasurements[i]] - predic_group2[,resMeasurements[i]])^2))
+      }
+
+      # get normalize-RMSE values
+      nRMSE <- matrix(ncol = length(resMeasurements), nrow = 3, byrow = T)
+      colnames(nRMSE) <- resMeasurements
+      rownames(nRMSE) <- c('global','group1','group2')
+      for (i in 1:length(resMeasurements)){
+        nRMSE[1,i] <- (RMSE[1,i]/( max(dat[,resMeasurements[i]]) - min(dat[,resMeasurements[i]]) ))*100
+        nRMSE[2,i] <- (RMSE[2,i]/( max(dat[,resMeasurements[i]]) - min(dat[,resMeasurements[i]]) ))*100
+        nRMSE[3,i] <- (RMSE[3,i]/( max(dat[,resMeasurements[i]]) - min(dat[,resMeasurements[i]]) ))*100
+      }
+
+      # get bias values
+      bias <- matrix(ncol = length(resMeasurements), nrow = 3, byrow = T)
+      colnames(bias) <- resMeasurements
+      rownames(bias) <- c('global','group1','group2')
+      for (i in 1:length(resMeasurements)){
+        lm1 = lm(predic_global[,resMeasurements[i]] ~ dat[,resMeasurements[i]]-1)
+        lm2 = lm(predic_group1[,resMeasurements[i]] ~ dat[,resMeasurements[i]]-1)
+        lm3 = lm(predic_group2[,resMeasurements[i]] ~ dat[,resMeasurements[i]]-1)
+        bias[1,i] <- 1-coef(lm1)
+        bias[2,i] <- 1-coef(lm2)
+        bias[3,i] <- 1-coef(lm3)
+      }
+  } else {
+    mmData = dat[,pMeasurements]
+    residuals = NA
+    r_square = NA
+    RMSE = NA
+    nRMSE = NA
+    bias = NA
   }
 
   # Prepare return Object
