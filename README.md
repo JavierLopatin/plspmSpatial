@@ -5,11 +5,12 @@ Set of functions to help in PLS-PM analysis of ecological and geoscience data.
 The currently included functions are:
 
     - plspmPredict
+    - plspm.groupsPredict
     - plspmResiduals
 
 @author: Javier Lopatin
 
-**plspmPredict**:
+### **plspmPredict**:
 
 This function predicts PLS-PM latent and measurement variables from a 'plspm' object ('plspm' R-package)
 
@@ -75,8 +76,17 @@ An object of class <code>plspmPredict</code> is returned. The object returns a l
 
         Matrix of bias values of all measurement variables (only with 'dat' as class 'data.frame')
 
+### **plspm.groupsPredict**:
 
-**plspmRsiduals**:
+**Usage**:
+
+  plspm.groupsPredict(pls, pls.groups, train.groups, dat)
+
+  **Details**:
+
+This function has the same functions as <code>plspmPredict</code>, but uses a <code>plspm.groups</code> object as input. Therefore, it gives a list of predicted scores, measurement variables, and residuals for the 'general', 'group1', and 'group2' models.
+
+### **plspmRsiduals**:
 
 **Usage**:
 
