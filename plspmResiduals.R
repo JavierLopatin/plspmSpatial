@@ -13,13 +13,13 @@
 plspmResiduals <- function (pls, Y = NULL) {
 
   if (class(pls) != "plspm")
-    stop("\n'res.clus()' requires a 'plspm' object")
+    stop("\n'plspmResiduals()' requires a 'plspm' object")
   # checking reflective modes
   if (any(pls$model$specs$modes != "A"))
-    stop("\nSorry, REBUS only works for mode 'A'")
+    stop("\nSorry, plspmResiduals() only works for mode 'A'")
   # checking scaled data
   if (!pls$model$specs$scaled)
-    stop("\nSorry, REBUS only works with scaled='TRUE'")
+    stop("\nSorry, plspmResiduals() only works with scaled='TRUE'")
   # test availibility of dataset (either Y or pls$data)
   test_dataset(Y, pls$data, pls$model$gens$obs)
 
@@ -73,5 +73,6 @@ plspmResiduals <- function (pls, Y = NULL) {
   inner_residuals = Y.lvs[,endo==1] - Y.hat
 
   out <- list (inner_residuals = inner_residuals, outer_residuals = outer_residuals)
+  class(out) <- "plspmResiduals"
   return (out)
 }
