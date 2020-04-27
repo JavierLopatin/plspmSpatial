@@ -28,7 +28,7 @@ WARNING: For the moment, only working with <code>class(data) == data.frame</code
 
 **Usage**:
 
-  plspmPred(pls, data, ...)
+  plspmPred(pls, dat, ...)
 
 **Arguments**:
 
@@ -44,24 +44,43 @@ The function plspmPredict estimates  extrapolation values of Latent and Measurem
 An object of class <code>plspmPredict</code> is returned. The object returns a list with:
 
 -   **mmData**
+
         Matrix or RasterStack of the input measurement variables
+
 -   **mmPredicted**
+
         Matrix or RasterStack of the predicted all measurement variables
+
 -   **mmResiduals**
+
         Matrix or RasterStack of the residuals of all measurement variables
+
 -   **Scores**
+
         Matrix or RasterStack of the predicted Latent Variables scores [in ordination units]
+
 -   **r_square**
+
         Matrix of Squared Pearson's Correlation values of all measurement variables (only with 'dat' as class 'data.frame')
+
 -   **RMSE**
+
         Matrix of Root-Mean-Square-Error values of all measurement variables (only with 'dat' as class 'data.frame')
+
 -   **nRMSE**
+
         Matrix of normalizedRoot-Mean-Square-Error [%] values of all measurement variables (only with 'dat' as class 'data.frame')
+
 -   **bias**
+
         Matrix of bias values of all measurement variables (only with 'dat' as class 'data.frame')
 
 
 **plspmRsiduals**:
+
+**Usage**:
+
+  plspmRsiduals(pls)
 
 **Arguments**:
 
@@ -77,6 +96,9 @@ This function obtain residuals for all Latent and Measurement variables from an 
 An object of class <code>plspmResiduals</code> is returned. The object returns a list with:
 
 -   **inner_residuals**
+
         Matrix of residual values for the Latent Variables
+
 -   **outer_residuals**
+
         Matrix of residual values for the Measurement Variables
