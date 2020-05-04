@@ -40,8 +40,8 @@ plspmPredict <- function(pls, dat)
   ltVariables <- pls$model$gen$lvs_names # latent variables
   mmVariables <- pls$model$gen$mvs_names # measurement variables
   path_coef   <- pls$path_coefs # path coefficients
-  endogenous = as.logical(rowSums(pls$model$IDM))
-  num_endo = sum(endogenous)
+  #endogenous = as.logical(rowSums(pls$model$IDM))
+  #num_endo = sum(endogenous)
 
   # Extract and Normalize the measurements for the model
   normDataTrain <- scale(pls$data[, mmVariables], TRUE, TRUE)
