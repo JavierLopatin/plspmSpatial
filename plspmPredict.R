@@ -31,7 +31,6 @@ plspmPredict <- function(pls, dat)
   if (class (dat) == 'RasterBrick') method <- 'rst'
   if (class (dat) == 'RasterStack') method <- 'rst'
 
-
   # =======================================================
   # inputs setting
   # =======================================================
@@ -122,88 +121,139 @@ plspmPredict <- function(pls, dat)
   # =======================================================
 
   # Extract Measurements needed for Predictions
-  if (method == 'dat'){ normData <- dat[, pMeasurements] }
-
-  # Normalize data
-  for (i in pMeasurements){
-    normData[,i] <- (normData[,i] - meanData[i])/sdData[i]
-  }
-
-  # Convert dataset to matrix
-  normData <- data.matrix(normData)
-
-  # Add empty columns to normData for the estimated measurements
-  for (i in 1:length(eMeasurements)){
-    normData = cbind(normData, seq(0,0,length.out = nrow(normData)))
-    colnames(normData)[length(colnames(normData))] = eMeasurements[i]
-  }
-
-  # Estimate Factor Scores from Outer Path
-  fscores <- normData %*% outer_weights
-
-  # Estimate Factor Scores from Inner Path and complete Matrix
-  fscores <- fscores + fscores %*% t(path_coef)
-
-  # obtain accuracy metrics from the predicted scores
-  #fit_scores <- matrix(ncol=num_endo, nrow = 4, byrow = T)
-  #colnames(fit_scores) <- unique(smMatrix[,2])
-  #rownames(fit_scores) <- c('r_square','RMSE','nRMSE','bias')
-  #for (i in 1:num_endo) {
-  #  tryCatch({
-  #    # index for endo LV
-  #    k1 <- unique(smMatrix[,2])[i]
-  #    # index for indep LVs
-  #    k2 <- smMatrix[,1] [ which(smMatrix[,2] == k1) ]
-  #    lm = lm(fscores_global[,k1] ~ fscores_global[,k2])
-  #    p = predict(lm)
-  #    fit_scores[1,i] = cor(fscores_global[,k1], p, method="pearson")
-  #    fit_scores[2,i] = sqrt(mean((fscores_global[,k1] - p)^2))
-  #    fit_scores[3,i] = (RMSE_scores[1,i]/( max(fscores_global[,k1]) - min(fscores_global[,k1]) ))*100
-  #    fit_scores[4,i] =  1-coef( lm(p~fscores_group2[,k1]-1) )
-  #
-  #  }, error = function(e) { skip_to_next <<- TRUE})
-  #}
-
-  # Predict Measurements with loadings
-  predictedMeasurements <- fscores %*% t(outer_loadings)
-
-  # Denormalize data
-  for (i in mmVariables){
-    predictedMeasurements[,i]<-(predictedMeasurements[,i] * sdData[i]) + meanData[i]
-  }
-
-  # Calculating the measurement residuals and accuracies if validation data is provided
-  if (!is.na(sum( match( eMeasurements, colnames(dat) ) ))){ # if validation data is presented for the endogenous variables
-
-    # measurement variables data
-    mmData = dat[, eMeasurements]
-
-    # get residuals
-    mmResiduals <- dat[,resMeasurements] - predictedMeasurements[,resMeasurements]
-
-    # get accuracies of measurement predictions
-    fit_measurements <- matrix(ncol=length(resMeasurements), nrow = 4, byrow = T)
-    colnames(fit_measurements) <- resMeasurements
-    rownames(fit_measurements) <- c('r_square','RMSE','nRMSE','bias')
-    for (i in 1:length(resMeasurements)){
-      fit_measurements[1,i] <- cor(dat[,resMeasurements[i]], predictedMeasurements[,resMeasurements[i]], method="pearson")
-      fit_measurements[2,i] <- sqrt(mean((dat[,resMeasurements[i]] - predictedMeasurements[,resMeasurements[i]])^2))
-      fit_measurements[3,i] <- (fit_measurements[2,i]/(max(dat[,resMeasurements[i]]) - min(dat[,resMeasurements[i]])))*100
-      lm = lm(predictedMeasurements[,resMeasurements[i]] ~ dat[,resMeasurements[i]]-1)
-      fit_measurements[4,i] <- 1-coef(lm)
+  if (method == 'dat'){
+    normData <- dat[, pMeasurements]
+    # Normalize data
+    for (i in pMeasurements){
+      normData[,i] <- (normData[,i] - meanData[i])/sdData[i]
     }
-  } else {
-    mmData = dat[,pMeasurements]
-    residuals = NA
-    fit_measurements = NA
+    # Convert dataset to matrix
+    normData <- data.matrix(normData)
+
+    # Add empty columns to normData for the estimated measurements
+    for (i in 1:length(eMeasurements)){
+      normData = cbind(normData, seq(0,0,length.out = nrow(normData)))
+      colnames(normData)[length(colnames(normData))] = eMeasurements[i]
+    }
+
+    # Estimate Factor Scores from Outer Path
+    fscores <- normData %*% outer_weights
+    # Estimate Factor Scores from Inner Path and complete Matrix
+    fscores <- fscores + fscores %*% t(path_coef)
+
+    # Predict Measurements with loadings
+    predictedMeasurements <- fscores %*% t(outer_loadings)
+
+    # Denormalize data
+    for (i in mmVariables){
+      predictedMeasurements[,i]<-(predictedMeasurements[,i] * sdData[i]) + meanData[i]
+    }
+
+    # Calculating the measurement residuals and accuracies if validation data is provided
+    if (!is.na(sum( match( eMeasurements, colnames(dat) ) ))){ # if validation data is presented for the endogenous variables
+
+      # measurement variables data
+      mmData = dat[, eMeasurements]
+
+      # get residuals
+      mmResiduals <- dat[,resMeasurements] - predictedMeasurements[,resMeasurements]
+
+      # get accuracies of measurement predictions
+      fit_measurements <- matrix(ncol=length(resMeasurements), nrow = 4, byrow = T)
+      colnames(fit_measurements) <- resMeasurements
+      rownames(fit_measurements) <- c('r_square','RMSE','nRMSE','bias')
+      for (i in 1:length(resMeasurements)){
+        fit_measurements[1,i] <- cor(dat[,resMeasurements[i]], predictedMeasurements[,resMeasurements[i]], method="pearson")
+        fit_measurements[2,i] <- sqrt(mean((dat[,resMeasurements[i]] - predictedMeasurements[,resMeasurements[i]])^2))
+        fit_measurements[3,i] <- (fit_measurements[2,i]/(max(dat[,resMeasurements[i]]) - min(dat[,resMeasurements[i]])))*100
+        lm = lm(predictedMeasurements[,resMeasurements[i]] ~ dat[,resMeasurements[i]]-1)
+        fit_measurements[4,i] <- 1-coef(lm)
+      }
+    } else {
+      mmData = dat[,pMeasurements]
+      residuals = NA
+      fit_measurements = NA
+    }
+
+    # Prepare return Object
+    predictResults <- list(mmData = mmData,
+                           mmPredicted = predictedMeasurements[,resMeasurements],
+                           mmResiduals = mmResiduals,
+                           mmfit = fit_measurements,
+                           Scores = fscores)
   }
 
-  # Prepare return Object
-  predictResults <- list(mmData = mmData,
-                         mmPredicted = predictedMeasurements[,resMeasurements],
-                         mmResiduals = mmResiduals,
-                         mmfit = fit_measurements,
-                         Scores = fscores)
+  if (method == 'rst'){
+    names(dat) = pMeasurements
+    normData <- (dat[[1]] - meanData[1])/sdData[1]
+    for (i in 2:length(pMeasurements)){
+      #normData[[i]] <- (dat[[i]] - meanData[i])/sdData[i]
+      normData <- addLayer(normData, (dat[[i]] - meanData[i])/sdData[i])
+    }
+
+    # Add empty columns to normData for the estimated measurements
+    for (i in 1:length(eMeasurements)){
+      normData <- addLayer(normData, normData[[1]])
+      names(normData)[length(names(normData))] <- eMeasurements[i]
+      normData[[length(names(normData))]][normData[[length(names(normData))]]] <- 0
+    }
+
+    # Estimate Factor Scores from Outer Path
+    fscores <- raster(normData)
+    for (i in 1:length(ltVariables)){
+      fscores <- addLayer(fscores, calc(normData[[which(outer_weights[,i] == 1)]], fun=prod))
+    }
+    # Estimate Factor Scores from Inner Path and complete Matrix
+    for (i in 1:length(ltVariables)){
+      idx = which(t(path_coef)[,i] != 0)
+      n = length(idx)
+      if (n == 0){
+        fscores[[i]] <- fscores[[i]]
+        names(fscores[[i]]) = ltVariables[i]
+      } else if (n == 1){
+        fscores[[i]] <- fscores[[i]] + (fscores[[idx]] * t(path_coef)[,i][idx])
+        names(fscores[[i]]) = ltVariables[i]
+      } else {
+        r = raster(fscores)
+        for (j in 1:n){ r = addLayer(r, (fscores[[idx[j]]] * t(path_coef)[,i][idx][j])) }
+        fscores[[i]] <- fscores[[i]] + calc(r, fun=sum)
+        names(fscores[[i]]) = ltVariables[i]
+      }
+    }
+
+    # Predict Measurements with loadings
+    predictedMeasurements <- raster(fscores[[1]])
+    for (i in 1:length(eMeasurements)){ # measurements
+      for (j in 1:length(enVariables)){ #LV
+        idx = which(mmVariables == eMeasurements[i])
+        idx2 = which(ltVariables == enVariables[j])
+        if (length(idx) == 1){
+          predictedMeasurements <- addLayer(predictedMeasurements, fscores[[idx2]] * t(outer_loadings)[idx2, idx])
+          names(predictedMeasurements) = eMeasurements[i]
+        } else {
+          r = raster(fscores[[1]])
+          for (k in 1:n){ r = addLayer(r, (fscores[[idx2[j]]] * t(outer_loadings)[idx2, idx[j]])) }
+          predictedMeasurements <- addLayer(predictedMeasurements, calc(r, fun=sum))
+          names(predictedMeasurements) = eMeasurements
+        }
+      }
+    }
+
+    # Denormalize data
+    for (i in 1:length(eMeasurements)){
+      idx = which(names(sdData) == eMeasurements[i])
+      predictedMeasurements[[i]] <- (predictedMeasurements[[i]] * sdData[idx]) + meanData[idx]
+    }
+
+    # Prepare return Object
+    predictResults <- list(mmPredicted = predictedMeasurements,
+                           Scores = fscores)
+
+  }
+
+  # =======================================================
+  # function output
+  # =======================================================
 
   class(predictResults) <- "plspmPredict"
   return(predictResults)
