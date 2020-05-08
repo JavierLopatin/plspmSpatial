@@ -39,8 +39,6 @@ plspmPredict <- function(pls, dat)
   ltVariables <- pls$model$gen$lvs_names # latent variables
   mmVariables <- pls$model$gen$mvs_names # measurement variables
   path_coef   <- pls$path_coefs # path coefficients
-  #endogenous = as.logical(rowSums(pls$model$IDM))
-  #num_endo = sum(endogenous)
 
   # Extract and Normalize the measurements for the model
   normDataTrain <- scale(pls$data[, mmVariables], TRUE, TRUE)
@@ -223,20 +221,21 @@ plspmPredict <- function(pls, dat)
 
     # Predict Measurements with loadings
     predictedMeasurements <- raster(fscores[[1]])
-    for (i in 1:length(eMeasurements)){ # measurements
-      for (j in 1:length(enVariables)){ #LV
-        idx = which(mmVariables == eMeasurements[i])
-        idx2 = which(ltVariables == enVariables[j])
-        if (length(idx) == 1){
-          predictedMeasurements <- addLayer(predictedMeasurements, fscores[[idx2]] * t(outer_loadings)[idx2, idx])
-          names(predictedMeasurements) = eMeasurements[i]
-        } else {
-          r = raster(fscores[[1]])
-          for (k in 1:n){ r = addLayer(r, (fscores[[idx2[j]]] * t(outer_loadings)[idx2, idx[j]])) }
-          predictedMeasurements <- addLayer(predictedMeasurements, calc(r, fun=sum))
-          names(predictedMeasurements) = eMeasurements
-        }
-      }
+
+    if (length(eMeasurements) == 1){
+      idx = which(mmVariables == eMeasurements) # measurement
+      idx2 = which(ltVariables == enVariables) # LV
+      predictedMeasurements <- addLayer(predictedMeasurements, fscores[[idx2]] * t(outer_loadings)[idx2, idx])
+      names(predictedMeasurements) = eMeasurements[i]
+    } else{
+      idx2 = which(ltVariables == enVariables) # LV
+      for (i in 1:length(eMeasurements)){ # measurements
+        idx = which(mmVariables == eMeasurements[i]) # measurement
+        r = raster(fscores[[1]])
+        for (k in 1:length(idx)){ r = addLayer(r, (fscores[[idx2]] * t(outer_loadings)[idx2, idx])) }
+        predictedMeasurements <- addLayer(predictedMeasurements, calc(r, fun=sum))
+        names(predictedMeasurements)[i] = eMeasurements[i]
+     }
     }
 
     # Denormalize data
