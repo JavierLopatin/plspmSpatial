@@ -76,8 +76,8 @@ plspmPredict <- function(pls, dat)
                     dimnames = list(1:length(pls$effects[,1]), c("source","target")))
 
   for (i in 1:length(pls$effects[,1])){
-    exVar = strsplit(as.character(pls$effects[,1][i]), "[-->]")[[1]][1]
-    enVar = strsplit(as.character(pls$effects[,1][i]), "[-->]")[[1]][3]
+    exVar = strsplit(as.character(pls$effects[,1][i]), "[->]")[[1]][1]
+    enVar = strsplit(as.character(pls$effects[,1][i]), "[->]")[[1]][3]
     smMatrix[i,1] <- gsub(" ", "", exVar, fixed = TRUE)
     smMatrix[i,2] <- gsub(" ", "", enVar, fixed = TRUE)
   }
