@@ -30,94 +30,94 @@ plspmPredict <- function(pls, dat)
   if (class (dat) ==  "data.frame") method <- 'dat'
   if (class (dat) == 'RasterBrick') method <- 'rst'
   if (class (dat) == 'RasterStack') method <- 'rst'
-
+  
   # =======================================================
   # inputs setting
   # =======================================================
-
+  
   # from plspm object
   ltVariables <- pls$model$gen$lvs_names # latent variables
   mmVariables <- pls$model$gen$mvs_names # measurement variables
   path_coef   <- pls$path_coefs # path coefficients
-
+  
   # Extract and Normalize the measurements for the model
   normDataTrain <- scale(pls$data[, mmVariables], TRUE, TRUE)
   # Extract Mean and Standard Deviation of measurements for future prediction
   meanData <- attr(normDataTrain, "scaled:center")
   sdData   <- attr(normDataTrain, "scaled:scale")
-
+  
   # =======================================================
   # prepare data
   # =======================================================
-
+  
   # get relationship matrix
   mmMatrix = matrix(nrow = length(mmVariables),
                     ncol = 2, byrow =TRUE,
                     dimnames = list(1:length(mmVariables), c("latent","measurement")))
   mmMatrix[,'latent'] = as.character(pls$outer_model[,2])
   mmMatrix[,'measurement'] = as.character(pls$outer_model[,1])
-
+  
   # Create a matrix of outer_weights
   outer_weights <- matrix(data=0,
                           nrow=length(mmVariables),
                           ncol=length(ltVariables),
                           dimnames = list(mmVariables,ltVariables))
-
+  
   #Initialize outer_weights matrix with value 1 for each relationship in the measurement model
   for (i in 1:length(ltVariables))  {
     outer_weights [mmMatrix[mmMatrix[,"latent"]==ltVariables[i],
-                            "measurement"],
-                   ltVariables[i]] = 1
+                            "measurement"], ltVariables[i]] = 1
   }
-
+  
   # get relationship matrix
-  smMatrix = matrix(nrow = length(pls$effects[,1]),
+  eff = which( rowSums(pls$effects[,2:4]) != 0 )
+  smMatrix = matrix(nrow = length(eff),
                     ncol = 2, byrow =TRUE,
-                    dimnames = list(1:length(pls$effects[,1]), c("source","target")))
-
-  for (i in 1:length(pls$effects[,1])){
-    exVar = strsplit(as.character(pls$effects[,1][i]), "[->]")[[1]][1]
-    enVar = strsplit(as.character(pls$effects[,1][i]), "[->]")[[1]][3]
+                    dimnames = list(1:length(eff), c("source","target")))
+  
+  for (i in 1:length(eff)){
+    exVar = strsplit(as.character(pls$effects[eff,1][i]), "[->]")[[1]][1]
+    enVar = strsplit(as.character(pls$effects[eff,1][i]), "[->]")[[1]][3]
     smMatrix[i,1] <- gsub(" ", "", exVar, fixed = TRUE)
     smMatrix[i,2] <- gsub(" ", "", enVar, fixed = TRUE)
   }
-
+  
   # Create a matrix of outer_loadins
   outer_loadings <- matrix(data=0,
                            nrow=length(mmVariables),
                            ncol=length(ltVariables),
                            dimnames = list(mmVariables,ltVariables))
-
+  
   for (i in 1:length(ltVariables))  {
     mesVar = mmMatrix[mmMatrix[,"latent"]==ltVariables[i], "measurement"]
     idx = which(pls$outer_model$name %in% mesVar)
     outer_loadings[mesVar , ltVariables[i]] = pls$outer_model$loading[idx]
   }
-
-
+  
+  
   # Identify Exogenous and Endogenous Variables
   exVariables <- unique(smMatrix[,1])
   pMeasurements <- NULL
   for (i in 1:length(exVariables)){
     pMeasurements <- c(pMeasurements,mmMatrix[mmMatrix[,"latent"]==exVariables[i],"measurement"])
   }
-
+  
   enVariables <- unique(smMatrix[,2])
   resMeasurements <- NULL
   for (i in 1:length(enVariables)){
     resMeasurements <- c(resMeasurements, mmMatrix[mmMatrix[, "latent"] == enVariables[i],"measurement"])
   }
-
+  
   enVariables <- setdiff(enVariables,exVariables)
   eMeasurements <- NULL
   for (i in 1:length(enVariables)){
     eMeasurements <- c(eMeasurements, mmMatrix[mmMatrix[, "latent"] == enVariables[i],"measurement"])
   }
-
+  
   # =======================================================
   # predict PLS-PM values
   # =======================================================
-
+  
   # Extract Measurements needed for Predictions
   if (method == 'dat'){
     normData <- dat[, pMeasurements]
@@ -127,35 +127,35 @@ plspmPredict <- function(pls, dat)
     }
     # Convert dataset to matrix
     normData <- data.matrix(normData)
-
+    
     # Add empty columns to normData for the estimated measurements
     for (i in 1:length(eMeasurements)){
       normData = cbind(normData, seq(0,0,length.out = nrow(normData)))
       colnames(normData)[length(colnames(normData))] = eMeasurements[i]
     }
-
+    
     # Estimate Factor Scores from Outer Path
     fscores <- normData %*% outer_weights
     # Estimate Factor Scores from Inner Path and complete Matrix
     fscores <- fscores + fscores %*% t(path_coef)
-
+    
     # Predict Measurements with loadings
     predictedMeasurements <- fscores %*% t(outer_loadings)
-
+    
     # Denormalize data
     for (i in mmVariables){
-      predictedMeasurements[,i]<-(predictedMeasurements[,i] * sdData[i]) + meanData[i]
+      predictedMeasurements[,i] <- (predictedMeasurements[,i] * sdData[i]) + meanData[i]
     }
-
+    
     # Calculating the measurement residuals and accuracies if validation data is provided
     if (!is.na(sum( match( eMeasurements, colnames(dat) ) ))){ # if validation data is presented for the endogenous variables
-
+      
       # measurement variables data
       mmData = dat[, eMeasurements]
-
+      
       # get residuals
       mmResiduals <- dat[,resMeasurements] - predictedMeasurements[,resMeasurements]
-
+      
       # get accuracies of measurement predictions
       fit_measurements <- matrix(ncol=length(resMeasurements), nrow = 4, byrow = T)
       colnames(fit_measurements) <- resMeasurements
@@ -172,7 +172,7 @@ plspmPredict <- function(pls, dat)
       residuals = NA
       fit_measurements = NA
     }
-
+    
     # Prepare return Object
     predictResults <- list(mmData = mmData,
                            mmPredicted = predictedMeasurements[,resMeasurements],
@@ -180,7 +180,7 @@ plspmPredict <- function(pls, dat)
                            mmfit = fit_measurements,
                            Scores = fscores)
   }
-
+  
   if (method == 'rst'){
     names(dat) = pMeasurements
     normData <- (dat[[1]] - meanData[1])/sdData[1]
@@ -188,14 +188,14 @@ plspmPredict <- function(pls, dat)
       #normData[[i]] <- (dat[[i]] - meanData[i])/sdData[i]
       normData <- addLayer(normData, (dat[[i]] - meanData[i])/sdData[i])
     }
-
+    
     # Add empty columns to normData for the estimated measurements
     for (i in 1:length(eMeasurements)){
       normData <- addLayer(normData, normData[[1]])
       names(normData)[length(names(normData))] <- eMeasurements[i]
       normData[[length(names(normData))]][normData[[length(names(normData))]]] <- 0
     }
-
+    
     # Estimate Factor Scores from Outer Path
     fscores <- raster(normData)
     for (i in 1:length(ltVariables)){
@@ -218,10 +218,10 @@ plspmPredict <- function(pls, dat)
         names(fscores[[i]]) = ltVariables[i]
       }
     }
-
+    
     # Predict Measurements with loadings
     predictedMeasurements <- raster(fscores[[1]])
-
+    
     if (length(eMeasurements) == 1){
       idx = which(mmVariables == eMeasurements) # measurement
       idx2 = which(ltVariables == enVariables) # LV
@@ -235,26 +235,26 @@ plspmPredict <- function(pls, dat)
         for (k in 1:length(idx)){ r = addLayer(r, (fscores[[idx2]] * t(outer_loadings)[idx2, idx])) }
         predictedMeasurements <- addLayer(predictedMeasurements, calc(r, fun=sum))
         names(predictedMeasurements)[i] = eMeasurements[i]
-     }
+      }
     }
-
+    
     # Denormalize data
     for (i in 1:length(eMeasurements)){
       idx = which(names(sdData) == eMeasurements[i])
       predictedMeasurements[[i]] <- (predictedMeasurements[[i]] * sdData[idx]) + meanData[idx]
     }
-
+    
     # Prepare return Object
     predictResults <- list(mmPredicted = predictedMeasurements,
                            Scores = fscores)
-
+    
   }
-
+  
   # =======================================================
   # function output
   # =======================================================
-
+  
   class(predictResults) <- "plspmPredict"
   return(predictResults)
-
+  
 }
